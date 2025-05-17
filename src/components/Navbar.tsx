@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Bell, Github, User } from "lucide-react";
+import { Bell, Github, Moon, Sun, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useTheme } from "@/components/ThemeProvider";
 
 export function Navbar() {
+  const { theme, setTheme } = useTheme();
+
   return (
     <header className="border-b bg-card px-6 py-3">
       <div className="flex items-center justify-between">
@@ -23,6 +26,19 @@ export function Navbar() {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+          
           <Button variant="outline" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-arena-600 text-[10px] text-white">
