@@ -13,29 +13,28 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define menu items for participants
 const participantMenuItems = [
-  { title: "Dashboard", path: "/", icon: Home },
-  { title: "Challenges", path: "/challenges", icon: Code },
-  { title: "Leaderboard", path: "/leaderboard", icon: BarChart3 },
+  { title: "Dashboard", path: "/app", icon: Home },
+  { title: "Challenges", path: "/app/challenges", icon: Code },
+  { title: "Leaderboard", path: "/app/leaderboard", icon: BarChart3 },
 ];
 
 // Define menu items for companies
 const companyMenuItems = [
-  { title: "Dashboard", path: "/company", icon: Home },
-  { title: "My Challenges", path: "/company/challenges", icon: PlusSquare },
-  { title: "Submissions", path: "/company/submissions", icon: CheckSquare },
-  { title: "Candidates", path: "/company/candidates", icon: Users },
+  { title: "Dashboard", path: "/app/company", icon: Home },
+  { title: "My Challenges", path: "/app/company/challenges", icon: PlusSquare },
+  { title: "Submissions", path: "/app/company/submissions", icon: CheckSquare },
+  { title: "Candidates", path: "/app/company/candidates", icon: Users },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
-  const isCompanyRoute = location.pathname.startsWith('/company');
+  const isCompanyRoute = location.pathname.startsWith('/app/company');
   const [activeTab, setActiveTab] = useState(isCompanyRoute ? "company" : "participant");
   
   const menuItems = activeTab === "company" ? companyMenuItems : participantMenuItems;
@@ -70,7 +69,7 @@ export function AppSidebar() {
               <SidebarMenuButton asChild>
                 <NavLink
                   to={item.path}
-                  end={item.path === "/" || item.path === "/company"}
+                  end={item.path === "/app" || item.path === "/app/company"}
                   className={({ isActive }) =>
                     cn(
                       "flex items-center gap-4 px-4 py-2 rounded-md transition-colors w-full",
