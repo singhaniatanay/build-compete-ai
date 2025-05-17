@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Bell, Github, Moon, Sun, User } from "lucide-react";
+import { Bell, Github, Moon, Sun, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U";
+    return user.email.substring(0, 2).toUpperCase();
+  };
 
   return (
     <header className="border-b bg-card px-6 py-3">
@@ -55,7 +63,8 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarFallback>AI</AvatarFallback>
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -68,7 +77,10 @@ export function Navbar() {
               </DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => signOut()}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
