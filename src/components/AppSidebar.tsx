@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { 
   BarChart3, Award, Code, Home, Users, Trophy, 
@@ -16,7 +15,8 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define menu items for participants
 const participantMenuItems = [
@@ -34,11 +34,39 @@ const companyMenuItems = [
 ];
 
 export function AppSidebar() {
-  const location = useLocation();
-  const isCompanyRoute = location.pathname.startsWith('/app/company');
-  const [activeTab, setActiveTab] = useState(isCompanyRoute ? "company" : "participant");
+  const { user } = useAuth();
+  const [userType, setUserType] = useState<"participant" | "company" | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  const menuItems = activeTab === "company" ? companyMenuItems : participantMenuItems;
+  useEffect(() => {
+    const fetchUserType = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user type:', error);
+          return;
+        }
+        
+        setUserType(data?.user_type as "participant" | "company" || "participant");
+      } catch (err) {
+        console.error('Error in fetchUserType:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserType();
+  }, [user]);
+  
+  const isCompanyUser = userType === "company";
+  const menuItems = isCompanyUser ? companyMenuItems : participantMenuItems;
   
   return (
     <Sidebar>
@@ -50,64 +78,48 @@ export function AppSidebar() {
             <span className="text-xs text-muted-foreground">Arena</span>
           </div>
         </div>
-        <div className="px-4 py-2">
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="participant">Participant</TabsTrigger>
-              <TabsTrigger value="company">Company</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.path}>
-              <SidebarMenuButton asChild>
-                <NavLink
-                  to={item.path}
-                  end={item.path === "/app" || item.path === "/app/company"}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-4 px-4 py-2 rounded-md transition-colors w-full",
-                      {
-                        "bg-sidebar-accent text-sidebar-accent-foreground":
-                          isActive,
-                        "hover:bg-sidebar-accent/50": !isActive,
-                      }
-                    )
-                  }
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
+                    isActive ? "bg-muted font-medium" : "text-muted-foreground"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </NavLink>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {activeTab === "company" ? (
-              <>
-                <Building className="h-5 w-5 text-arena-500" />
-                <span className="text-sm font-medium">Company Mode</span>
-              </>
-            ) : (
-              <>
-                <Award className="h-5 w-5 text-arena-500" />
-                <span className="text-sm font-medium">AI Builder</span>
-              </>
-            )}
-          </div>
-          <SidebarTrigger className="lg:hidden" />
-        </div>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <NavLink
+              to="/app/profile"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted",
+                  isActive ? "bg-muted font-medium" : "text-muted-foreground"
+                )
+              }
+            >
+              <Settings className="h-4 w-4" />
+              Profile Settings
+            </NavLink>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
+      <SidebarTrigger className="bg-background">
+        <SidebarMenuButton />
+      </SidebarTrigger>
     </Sidebar>
   );
 }

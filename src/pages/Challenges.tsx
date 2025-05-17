@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   Badge, 
@@ -22,6 +22,7 @@ import {
   TabsTrigger
 } from "@/components/ui";
 import { Calendar, Clock, Filter, Search, Star, Users } from "lucide-react";
+import { createClient } from '@supabase/supabase-js';
 
 // Mock challenge data
 const challengesData = [
@@ -93,6 +94,97 @@ const challengesData = [
   },
 ];
 
+// Supabase Client Setup (replace with your actual URL and anon key)
+// It's recommended to store these in environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Mock challenge data - This will be replaced by fetched data
+// const challengesData = [
+//   {
+//     id: "1",
+//     title: "LLM-based Summarization Engine",
+//     company: "AI Research Labs",
+//     description: "Build an LLM-powered engine that can summarize technical documents with high accuracy and low hallucination rates.",
+//     difficulty: "Intermediate",
+//     participants: 128,
+//     daysLeft: 5,
+//     tags: ["NLP", "LLM", "Summarization"],
+//     featured: true,
+//   },
+//   {
+//     id: "2",
+//     title: "Multimodal Content Classifier",
+//     company: "TechCorp Inc.",
+//     description: "Create a system that can classify content across text, images and video using a unified ML approach.",
+//     difficulty: "Advanced",
+//     participants: 87,
+//     daysLeft: 12,
+//     tags: ["Multimodal", "Classification", "Computer Vision"],
+//     featured: false,
+//   },
+//   {
+//     id: "3",
+//     title: "Conversational AI Assistant",
+//     company: "ChatSystems",
+//     description: "Develop a conversational AI assistant that can handle customer service inquiries for a retail company.",
+//     difficulty: "Intermediate",
+//     participants: 156,
+//     daysLeft: 8,
+//     tags: ["Conversational AI", "NLP", "Customer Service"],
+//     featured: true,
+//   },
+//   {
+//     id: "4",
+//     title: "Recommendation System Optimization",
+//     company: "StreamFlix",
+//     description: "Optimize a recommendation system for a streaming platform to improve user engagement and content discovery.",
+//     difficulty: "Advanced",
+//     participants: 92,
+//     daysLeft: 15,
+//     tags: ["Recommendations", "ML Optimization", "User Engagement"],
+//     featured: false,
+//   },
+//   {
+//     id: "5",
+//     title: "Real-time Object Detection",
+//     company: "SecurityTech",
+//     description: "Build a real-time object detection system for security cameras that can identify suspicious activities.",
+//     difficulty: "Advanced",
+//     participants: 73,
+//     daysLeft: 10,
+//     tags: ["Computer Vision", "Object Detection", "Real-time Processing"],
+//     featured: false,
+//   },
+//   {
+//     id: "6",
+//     title: "AI-powered Code Assistant",
+//     company: "DevTools Inc.",
+//     description: "Create an AI assistant that can help developers write better code through suggestions and bug detection.",
+//     difficulty: "Intermediate",
+//     participants: 134,
+//     daysLeft: 7,
+//     tags: ["Code Generation", "Developer Tools", "LLM"],
+//     featured: true,
+//   },
+// ];
+
+interface Challenge {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  difficulty: string;
+  participants: number;
+  daysLeft?: number; // Made optional as it might be calculated or not directly stored
+  deadline?: string | null; // Added from schema
+  tags: string[];
+  featured: boolean;
+  created_at?: string;
+  // Add other fields from your Supabase schema as needed
+}
+
 const difficultyColor = {
   Beginner: "green",
   Intermediate: "yellow",
@@ -102,8 +194,46 @@ const difficultyColor = {
 const Challenges = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('challenges')
+          .select('*');
+
+        if (supabaseError) {
+          throw supabaseError;
+        }
+        // Calculate daysLeft if deadline is present
+        const processedData = data?.map(challenge => {
+          let daysLeftCalc = undefined;
+          if (challenge.deadline) {
+            const deadlineDate = new Date(challenge.deadline);
+            const today = new Date();
+            const diffTime = Math.abs(deadlineDate.getTime() - today.getTime());
+            daysLeftCalc = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          }
+          return { ...challenge, daysLeft: daysLeftCalc };
+        }) || [];
+
+        setChallenges(processedData as Challenge[]);
+      } catch (err: any) {
+        console.error("Error fetching challenges:", err);
+        setError(err.message || "Failed to fetch challenges. Please ensure your Supabase URL and Key are correct and the table exists.");
+      }
+      setLoading(false);
+    };
+
+    fetchChallenges();
+  }, []);
   
-  const filteredChallenges = challengesData.filter(challenge => {
+  const filteredChallenges = challenges.filter(challenge => {
     const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           challenge.description.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -113,6 +243,32 @@ const Challenges = () => {
     
     return matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="container space-y-6 animate-fade-in flex justify-center items-center h-[50vh]">
+        <p className="text-muted-foreground text-lg">Loading challenges...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container space-y-6 animate-fade-in text-center py-12">
+        <p className="text-red-500 text-lg">Error: {error}</p>
+        <p className="text-muted-foreground mt-2">Could not load challenges. Please try again later or check console for details.</p>
+      </div>
+    );
+  }
+
+  if (!loading && challenges.length === 0 && !error) {
+    return (
+      <div className="container space-y-6 animate-fade-in text-center py-12">
+        <h1 className="text-3xl font-bold tracking-tight">Challenges</h1>
+        <p className="text-muted-foreground mt-4">No challenges available at the moment. Check back soon!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container space-y-6 animate-fade-in">
@@ -194,7 +350,7 @@ const Challenges = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{challenge.daysLeft} days left</span>
+                      <span>{challenge.daysLeft !== undefined ? `${challenge.daysLeft} days left` : 'No deadline'}</span>
                     </div>
                   </div>
                   <Button asChild>
@@ -242,7 +398,7 @@ const Challenges = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{challenge.daysLeft} days left</span>
+                      <span>{challenge.daysLeft !== undefined ? `${challenge.daysLeft} days left` : 'No deadline'}</span>
                     </div>
                   </div>
                   <Button asChild>

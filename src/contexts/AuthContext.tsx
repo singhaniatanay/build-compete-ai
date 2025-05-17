@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, AuthResponse } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
@@ -11,7 +10,7 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGithub: () => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<AuthResponse | undefined>;
   signOut: () => Promise<void>;
 };
 
@@ -84,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const response = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -92,12 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      if (error) {
-        toast.error(error.message);
-        throw error;
+      if (response.error) {
+        toast.error(response.error.message);
+        throw response.error;
       }
       
       toast.success("Registration successful! Please check your email for verification.");
+      return response;
     } catch (error) {
       console.error("Error signing up:", error);
       throw error;

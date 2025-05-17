@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Github } from "lucide-react";
@@ -15,10 +14,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState<"participant" | "company">("participant");
+  const [companyName, setCompanyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, signInWithGithub } = useAuth();
 
@@ -27,7 +36,24 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      await signUp(email, password);
+      const signUpResult = await signUp(email, password);
+      
+      // After signup, update the profile with user type and company name if applicable
+      if (signUpResult?.user) {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: signUpResult.user.id,
+            email: email,
+            user_type: userType,
+            company_name: userType === 'company' ? companyName : null,
+            updated_at: new Date().toISOString()
+          });
+          
+        if (error) {
+          console.error("Error updating profile:", error);
+        }
+      }
     } catch (error) {
       console.error("Signup error:", error);
     } finally {
@@ -39,6 +65,12 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
+      // Store user type in localStorage to use after GitHub OAuth
+      localStorage.setItem('userType', userType);
+      if (userType === 'company') {
+        localStorage.setItem('companyName', companyName);
+      }
+      
       await signInWithGithub();
     } catch (error) {
       console.error("GitHub login error:", error);
@@ -56,11 +88,40 @@ const Signup = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="user-type">I am a</Label>
+            <Select 
+              value={userType} 
+              onValueChange={(value) => setUserType(value as "participant" | "company")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select user type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="participant">Participant</SelectItem>
+                <SelectItem value="company">Company</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {userType === "company" && (
+            <div className="space-y-2">
+              <Label htmlFor="company-name">Company Name</Label>
+              <Input
+                id="company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Enter company name"
+                required={userType === "company"}
+              />
+            </div>
+          )}
+          
           <Button
             variant="outline"
             className="w-full"
             onClick={handleGitHubLogin}
-            disabled={isLoading}
+            disabled={isLoading || (userType === "company" && !companyName)}
           >
             <Github className="mr-2 h-4 w-4" />
             Sign up with GitHub
@@ -97,7 +158,7 @@ const Signup = () => {
                 required
               />
             </div>
-            <Button className="w-full" type="submit" disabled={isLoading}>
+            <Button className="w-full" type="submit" disabled={isLoading || (userType === "company" && !companyName)}>
               {isLoading ? "Signing up..." : "Sign up"}
             </Button>
           </form>

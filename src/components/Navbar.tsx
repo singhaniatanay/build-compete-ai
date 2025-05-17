@@ -1,6 +1,5 @@
-
-import React from "react";
-import { Bell, Github, Moon, Sun, User, LogOut } from "lucide-react";
+import React, { useEffect } from "react";
+import { Bell, Github, Moon, Sun, User, LogOut, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,16 +14,54 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/sonner";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, signInWithGithub } = useAuth();
   const navigate = useNavigate();
+
+  // Log user object for debugging
+  useEffect(() => {
+    if (user) {
+      console.log("User object:", user);
+    }
+  }, [user]);
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     if (!user || !user.email) return "U";
     return user.email.substring(0, 2).toUpperCase();
+  };
+
+  // Check if user has GitHub connected
+  const isGithubConnected = () => {
+    // Check if user exists
+    if (!user) return false;
+    
+    // Supabase stores OAuth provider info in various places
+    // Check user_metadata first (contains 3rd party profile data)
+    if (user.user_metadata?.avatar_url?.includes('github')) return true;
+    
+    // Check if provider is explicitly set
+    if (user.app_metadata?.provider === 'github') return true;
+    
+    // Check identities (array of linked providers)
+    const identities = user.identities || [];
+    return identities.some(identity => identity.provider === 'github');
+  };
+
+  const handleGithubConnect = () => {
+    if (!user) {
+      navigate('/auth/login');
+      return;
+    }
+
+    if (isGithubConnected()) {
+      toast.success("GitHub is already connected to your account");
+    } else {
+      signInWithGithub();
+    }
   };
 
   return (
@@ -56,9 +93,23 @@ export function Navbar() {
             </span>
           </Button>
           
-          <Button variant="outline" size="sm" className="gap-2 hidden md:flex">
-            <Github className="h-4 w-4" />
-            <span>Connect GitHub</span>
+          <Button 
+            variant={isGithubConnected() ? "secondary" : "outline"} 
+            size="sm" 
+            className={`gap-2 hidden md:flex ${isGithubConnected() ? "bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800" : ""}`}
+            onClick={handleGithubConnect}
+          >
+            {isGithubConnected() ? (
+              <>
+                <Check className="h-4 w-4" />
+                <span>GitHub Connected</span>
+              </>
+            ) : (
+              <>
+                <Github className="h-4 w-4" />
+                <span>Connect GitHub</span>
+              </>
+            )}
           </Button>
           
           <DropdownMenu>

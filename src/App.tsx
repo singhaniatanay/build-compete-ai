@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,8 @@ import { SidebarProvider } from "./components/ui/sidebar";
 import { MainLayout } from "./layouts/MainLayout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import ChallengeRedirect from "./components/ChallengeRedirect";
+import DashboardRedirect from "./components/DashboardRedirect";
 
 // Landing page
 import Landing from "./pages/Landing";
@@ -16,6 +17,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import Callback from "./pages/auth/Callback";
+import SelectUserType from "./pages/auth/SelectUserType";
 
 // Participant pages
 import Dashboard from "./pages/Dashboard";
@@ -30,6 +32,8 @@ import CompanyDashboard from "./pages/company/Dashboard";
 import CompanyChallenges from "./pages/company/Challenges";
 import CompanySubmissions from "./pages/company/Submissions";
 import CompanyCandidates from "./pages/company/Candidates";
+import CreateChallenge from "./pages/company/CreateChallenge";
+import EditChallenge from "./pages/company/EditChallenge";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +54,12 @@ const App = () => (
               
               {/* Protected application routes with MainLayout */}
               <Route element={<ProtectedRoute />}>
+                {/* Route to redirect to appropriate dashboard */}
+                <Route path="/app" element={<DashboardRedirect />} />
+                
+                {/* User type selection */}
+                <Route path="/app/select-type" element={<SelectUserType />} />
+                
                 <Route path="/app" element={<MainLayout />}>
                   {/* Participant routes */}
                   <Route index element={<Dashboard />} />
@@ -61,6 +71,8 @@ const App = () => (
                   {/* Company routes */}
                   <Route path="company" element={<CompanyDashboard />} />
                   <Route path="company/challenges" element={<CompanyChallenges />} />
+                  <Route path="company/challenges/new" element={<CreateChallenge />} />
+                  <Route path="company/challenges/:id/edit" element={<EditChallenge />} />
                   <Route path="company/submissions" element={<CompanySubmissions />} />
                   <Route path="company/candidates" element={<CompanyCandidates />} />
                   
@@ -71,7 +83,10 @@ const App = () => (
               
               {/* Redirect old routes to new ones */}
               <Route path="/challenges" element={<Navigate to="/app/challenges" />} />
-              <Route path="/challenges/:id" element={<Navigate to="/app/challenges/:id" />} />
+              <Route 
+                path="/challenges/:id" 
+                element={<ChallengeRedirect />}
+              />
               <Route path="/leaderboard" element={<Navigate to="/app/leaderboard" />} />
               <Route path="/profile" element={<Navigate to="/app/profile" />} />
               <Route path="/company" element={<Navigate to="/app/company" />} />

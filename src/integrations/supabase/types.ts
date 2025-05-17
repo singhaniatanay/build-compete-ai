@@ -9,7 +9,146 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      challenges: {
+        Row: {
+          id: string
+          title: string
+          company: string
+          company_logo_url?: string | null
+          description: string
+          long_description: string
+          difficulty: string
+          participants: number
+          deadline: string
+          tags: string[]
+          featured: boolean
+          created_at: string
+          updated_at?: string | null
+          created_by?: string | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          company: string
+          company_logo_url?: string | null
+          description: string
+          long_description: string
+          difficulty: string
+          participants?: number
+          deadline: string
+          tags: string[]
+          featured?: boolean
+          created_at?: string
+          updated_at?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          company?: string
+          company_logo_url?: string | null
+          description?: string
+          long_description?: string
+          difficulty?: string
+          participants?: number
+          deadline?: string
+          tags?: string[]
+          featured?: boolean
+          created_at?: string
+          updated_at?: string | null
+          created_by?: string | null
+        }
+      }
+      challenge_participants: {
+        Row: {
+          id: string
+          challenge_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          challenge_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          challenge_id?: string
+          user_id?: string
+          joined_at?: string
+        }
+      }
+      submissions: {
+        Row: {
+          id: string
+          challenge_id: string
+          user_id: string
+          submitted_at: string
+          score?: number | null
+          status: "pending" | "reviewed" | "rejected"
+          feedback?: string | null
+          github_url?: string | null
+          video_url?: string | null
+          presentation_url?: string | null
+          description?: string | null
+        }
+        Insert: {
+          id?: string
+          challenge_id: string
+          user_id: string
+          submitted_at?: string
+          score?: number | null
+          status?: "pending" | "reviewed" | "rejected"
+          feedback?: string | null
+          github_url?: string | null
+          video_url?: string | null
+          presentation_url?: string | null
+          description?: string | null
+        }
+        Update: {
+          id?: string
+          challenge_id?: string
+          user_id?: string
+          submitted_at?: string
+          score?: number | null
+          status?: "pending" | "reviewed" | "rejected"
+          feedback?: string | null
+          github_url?: string | null
+          video_url?: string | null
+          presentation_url?: string | null
+          description?: string | null
+        }
+      }
+      profiles: {
+        Row: {
+          id: string
+          full_name?: string | null
+          email?: string | null
+          avatar_url?: string | null
+          updated_at?: string | null
+          user_type?: "participant" | "company" | null
+          company_name?: string | null
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          email?: string | null
+          avatar_url?: string | null
+          updated_at?: string | null
+          user_type?: "participant" | "company" | null
+          company_name?: string | null
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          email?: string | null
+          avatar_url?: string | null
+          updated_at?: string | null
+          user_type?: "participant" | "company" | null
+          company_name?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
